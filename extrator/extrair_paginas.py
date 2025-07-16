@@ -1,8 +1,9 @@
 import json
-import pdfplumber
+from tqdm import tqdm
+import pdfplumber # type: ignore
 from collections import defaultdict
-from .utils.unidades_sesc import unidades
-from .utils.visualizacao import desenhar_layout
+from utils.unidades_sesc import unidades
+from utils.visualizacao import desenhar_layout
 
 LINHAS_Y = [55, 615]
 
@@ -301,7 +302,7 @@ def is_normal_text_line(linha):
 def extrair_paginas(path_pdf : str, skip : int=2, draw : bool = False, save_path=""):
     pages = []
     with pdfplumber.open(path_pdf) as pdf:
-        for i, page in enumerate(pdf.pages[skip:]):
+        for i, page in tqdm(enumerate(pdf.pages[skip:])):
            blocos, header_1, header_2, del1, del2 = extrair_pagina(page)
            pages.append({
                 "header_1" : header_1,

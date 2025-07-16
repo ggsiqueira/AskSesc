@@ -1,8 +1,8 @@
 import json
-from pydantic import BaseModel
+from tqdm import tqdm
 from enum import Enum, auto
 from typing import List, Dict
-from .models.models import EventoHolder
+from models.models import EventoHolder
 from .extrair_paginas import extrair_paginas
 
 
@@ -19,7 +19,7 @@ def extrair_eventos(paginas: List[Dict], save_path : str = "") -> List[EventoHol
     estado = ParserState.EXPECT_TITLE
     unidade_atual = ""
     categoria = []
-    for pagina in paginas:
+    for pagina in tqdm(paginas):
         # Determina categoria da página
 
         if categoria:
