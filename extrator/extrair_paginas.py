@@ -146,9 +146,9 @@ def agrupar_blocos_por_linhas(page, linhas, P1_COLS=PAGE_1_COLS, P2_COLS=PAGE_2_
     lx2 = list(zip(P2_COLS, P2_COLS[1:]))
     imagens = page.images
 
-    linhas_layout = list(filter(lambda seq : in_limits(seq, imagens), linhas))
+    linhas = list(filter(lambda seq : in_limits(seq, imagens), linhas))
     for c1, c2 in lx1 + lx2:
-        linhas_layout = list(filter(lambda x : x["x0"] >= c1 and x["x1"] <= c2, linhas_layout))
+        linhas_layout = list(filter(lambda x : x["x0"] >= c1 and x["x1"] <= c2, linhas))
         linhas_layout = list(filter(lambda x : x["x0"] >= c1 and x["x1"] <= c2, linhas_layout))
         linhas_layout = sorted(linhas_layout, key=lambda l : l["top"])
         
@@ -299,7 +299,7 @@ def is_normal_text_line(linha):
     font = linha["font"].upper()
     return linha["size"] == 8.5 and ("REGULAR" in font or ("BOLD" not in font and "MEDIUM" not in font))
 
-def extrair_paginas(path_pdf : str, skip : int=2, draw : bool = False, save_path=""):
+def extrair_paginas(path_pdf : str, skip : int=0, draw : bool = False, save_path=""):
     pages = []
     with pdfplumber.open(path_pdf) as pdf:
         for i, page in tqdm(enumerate(pdf.pages[skip:])):

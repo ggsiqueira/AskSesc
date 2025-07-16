@@ -1,5 +1,7 @@
 from PIL import ImageDraw
+import os
 
+os.makedirs("output/layout", exist_ok=True)
 def desenhar_colunas(im, draw, scx, P1_COLS, P2_COLS):
     COLS = P1_COLS + P2_COLS
     for x in COLS:
