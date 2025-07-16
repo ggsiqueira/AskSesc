@@ -1,8 +1,8 @@
 import json
 import pdfplumber
 from collections import defaultdict
-from .unidades_sesc import unidades
-from .visualizacao import desenhar_layout
+from .utils.unidades_sesc import unidades
+from .utils.visualizacao import desenhar_layout
 
 LINHAS_Y = [55, 615]
 
@@ -178,12 +178,6 @@ def criar_bboxes_bloco(bloco):
     x1 = max(l["x1"] for l in bloco)
     bottom = max(l["bottom"] for l in bloco)
 
-    print("Bloco")
-    for linha in bloco:
-        if  linha["bold"]:
-            print(f"**{linha['text']}**")
-        else:
-            print(f"{linha['text']}")
     return {
         "linhas": bloco,
         "x0": x0,
@@ -304,7 +298,7 @@ def is_normal_text_line(linha):
     font = linha["font"].upper()
     return linha["size"] == 8.5 and ("REGULAR" in font or ("BOLD" not in font and "MEDIUM" not in font))
 
-def extrair_paginas(path_pdf : str, skip : int=2, draw : bool = False):
+def extrair_paginas(path_pdf : str, skip : int=2, draw : bool = False, save_path=""):
     pages = []
     with pdfplumber.open(path_pdf) as pdf:
         for i, page in enumerate(pdf.pages[skip:]):
@@ -319,7 +313,11 @@ def extrair_paginas(path_pdf : str, skip : int=2, draw : bool = False):
            })
            
            if draw: desenhar_layout(page, header_1, header_2, blocos, del1, del2, LINHAS_Y, salvar_como=f"./output/layout/preview_{(i+skip):02d}.png")
-        
+    
+    if save_path:
+        with open(save_path, 'w') as fp:
+            json.dump(pages, fp, indent=2, ensure_ascii=False)
+
     return pages
 
 if __name__ == "__main__":

@@ -1,6 +1,8 @@
 import json
+from pydantic import BaseModel
 from enum import Enum, auto
 from typing import List, Dict
+from .models.models import EventoHolder
 from .extrair_paginas import extrair_paginas
 
 
@@ -10,29 +12,8 @@ class ParserState(Enum):
     COLECT_BODY = auto() ,
     COLECT_FOOTER = auto() ,
 
-class EventoHolder:
-    def __init__(self):
-        self.titulo: List[str] = []
-        self.categoria: str = ""
-        self.subcategoria: str = ""
-        self.unidade: str = ""
-        self.descricao: List[str] = []
-        self.footer: List[str] = []
-        self.bloco_ids: List[int] = []
-    
-    def to_dict(self) -> Dict:
-        # Junta as linhas mantendo parágrafos onde relevante
-        return {
-            "titulo": " ".join(self.titulo).strip(),
-            "categoria": self.categoria,
-            "subcategoria" : self.subcategoria,
-            "unidade": self.unidade,
-            "descricao": " ".join(self.descricao).strip(),
-            "footer": " ".join(self.footer).strip(),
-            "bloco_ids": self.bloco_ids
-        }
 
-def extrair_eventos(paginas: List[Dict]) -> List[EventoHolder]:
+def extrair_eventos(paginas: List[Dict], save_path : str = "") -> List[EventoHolder]:
     eventos = []
     evento_atual = None
     estado = ParserState.EXPECT_TITLE
@@ -74,7 +55,7 @@ def extrair_eventos(paginas: List[Dict]) -> List[EventoHolder]:
             for linha in bloco["linhas"]:
                 if linha["type"] == "title":
                     if estado == ParserState.COLECT_TITLE and evento_atual:
-                        evento_atual.titulo.append(linha["text"])
+                        evento_atual.titulo += f" {linha['text']}"
                     elif estado == ParserState.COLECT_FOOTER or estado == ParserState.COLECT_BODY:
                         if evento_atual:
                             eventos.append(evento_atual)
@@ -85,8 +66,7 @@ def extrair_eventos(paginas: List[Dict]) -> List[EventoHolder]:
                         evento_atual = EventoHolder()
                         evento_atual.unidade = unidade_atual
                         evento_atual.categoria = categoria[p] if categoria[p] else categoria[p-1]
-                        evento_atual.bloco_ids.append(id(bloco))
-                        evento_atual.titulo.append(linha["text"])
+                        evento_atual.titulo += f" {linha['text']}"
                         estado = ParserState.COLECT_TITLE
 
                 elif linha["type"] == "category" and evento_atual:
@@ -95,11 +75,11 @@ def extrair_eventos(paginas: List[Dict]) -> List[EventoHolder]:
                     estado = ParserState.COLECT_BODY
 
                 elif linha["type"] == "body" and evento_atual:
-                    evento_atual.descricao.append(linha["text"])
+                    evento_atual.descricao += f" {linha['text']}"
                     estado = ParserState.COLECT_BODY
 
                 elif linha["type"] == "footer" and evento_atual:
-                    evento_atual.footer.append(linha["text"])
+                    evento_atual.rodape += f" {linha['text']}"
                     estado = ParserState.COLECT_FOOTER
                 
                     
@@ -107,10 +87,16 @@ def extrair_eventos(paginas: List[Dict]) -> List[EventoHolder]:
     if evento_atual:
         eventos.append(evento_atual)
     
+    eventos = filtrar_eventos(eventos)
+    if save_path:
+        eventos_dict = [e.dict() for e in eventos]
+        with open(save_path, 'w') as fp:
+            json.dump(eventos_dict, fp, indent=2, ensure_ascii=False)
+
     return eventos
 
 def filtrar_eventos(eventos):
-    evento_valido = lambda e : e.titulo and e.descricao and e.footer and e.categoria 
+    evento_valido = lambda e : e.titulo and e.descricao and e.rodape and e.categoria 
     return list(filter(evento_valido, eventos))
 
 def processar_eventos(pdf_path: str) -> List[Dict]:
